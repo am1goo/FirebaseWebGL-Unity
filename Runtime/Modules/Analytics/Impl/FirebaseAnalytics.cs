@@ -1,0 +1,243 @@
+using AOT;
+using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
+using UnityEngine;
+using UnityEngine.Pool;
+
+namespace FirebaseWebGL
+{
+    internal sealed class FirebaseAnalytics : IFirebaseAnalytics
+    {
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseAnalytics_initialize(int requestId, FirebaseCallbackDelegate callback);
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseAnalytics_getGoogleAnalyticsClientId(int requestId, FirebaseCallbackDelegate callback);
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseAnalytics_setAnalyticsCollectionEnabled(bool enabled);
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseAnalytics_setUserId(string userId);
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseAnalytics_setUserProperties(string propertiesAsJson);
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseAnalytics_setDefaultEventParameters(string parametersAsJson);
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseAnalytics_setConsent(string consentAsJson);
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseAnalytics_logEvent(string eventName, string eventValuesAsJson);
+
+        private readonly Dictionary<long, Action<FirebaseCallback<bool>>> _onInitializedCallbacks = new Dictionary<long, Action<FirebaseCallback<bool>>>();
+        private readonly Dictionary<long, Action<FirebaseCallback<string>>> _onGetGoogleAnalyticsClientIdCallbacks = new Dictionary<long, Action<FirebaseCallback<string>>>();
+
+        public Action<bool> onInitialized { get; set; }
+
+        private static FirebaseAnalytics _instance;
+
+        private bool _isInitializing = false;
+
+        private bool _isInitialized = false;
+        public bool isInitialized => _isInitialized;
+
+        private int _requestIds = 0;
+        private string _clientId = null;
+
+        public FirebaseAnalytics()
+        {
+            _instance = this;
+        }
+
+        private int NextRequestId()
+        {
+            return Interlocked.Increment(ref _requestIds);
+        }
+
+        public void Initialize(Action<FirebaseCallback<bool>> callback)
+        {
+            if (_isInitializing)
+                return;
+
+            if (isInitialized)
+                return;
+
+            if (Application.isEditor)
+            {
+                callback?.Invoke(new FirebaseCallback<bool>(false));
+                return;
+            }
+
+            var requestId = NextRequestId();
+            _onInitializedCallbacks.Add(requestId, callback);
+
+            FirebaseWebGL_FirebaseAnalytics_initialize(requestId, OnInitializationCallback);
+        }
+
+        [MonoPInvokeCallback(typeof(FirebaseCallbackDelegate))]
+        private static void OnInitializationCallback(string json)
+        {
+            var callback = JsonConvert.DeserializeObject<FirebaseCallback<bool>>(json);
+            _instance?.OnInitialized(callback);
+        }
+
+        private void OnInitialized(FirebaseCallback<bool> firebaseCallback)
+        {
+            _isInitializing = false;
+
+            if (_onInitializedCallbacks.TryGetValue(firebaseCallback.requestId, out var callback))
+            {
+                _onInitializedCallbacks.Remove(firebaseCallback.requestId);
+                try
+                {
+                    callback?.Invoke(firebaseCallback);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+
+            if (firebaseCallback.success == false)
+            {
+                //do nothing
+                return;
+            }
+
+            _isInitialized = firebaseCallback.result;
+            onInitialized?.Invoke(_isInitialized);
+        }
+
+        public void GetGoogleAnalyticsClientId(Action<FirebaseCallback<string>> callback)
+        {
+            if (!isInitialized)
+                throw new FirebaseModuleNotInitializedException(GetType());
+
+            if (_clientId != null)
+            {
+                callback?.Invoke(new FirebaseCallback<string>(_clientId));
+                return;
+            }
+
+            var requestId = NextRequestId();
+            _onGetGoogleAnalyticsClientIdCallbacks.Add(requestId, callback);
+
+            FirebaseWebGL_FirebaseAnalytics_getGoogleAnalyticsClientId(requestId, OnGetGoogleAnalyticsClientIdCallback);
+        }
+
+        [MonoPInvokeCallback(typeof(FirebaseCallbackDelegate))]
+        private static void OnGetGoogleAnalyticsClientIdCallback(string json)
+        {
+            var callback = JsonConvert.DeserializeObject<FirebaseCallback<string>>(json);
+            _instance?.OnGetGoogleAnalyticsClientId(callback);
+        }
+
+        private void OnGetGoogleAnalyticsClientId(FirebaseCallback<string> firebaseCallback)
+        {
+            if (_onGetGoogleAnalyticsClientIdCallbacks.TryGetValue(firebaseCallback.requestId, out var callback))
+            {
+                _onGetGoogleAnalyticsClientIdCallbacks.Remove(firebaseCallback.requestId);
+                try
+                {
+                    callback?.Invoke(firebaseCallback);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+            }
+
+            if (firebaseCallback.success == false)
+            {
+                //do nothing
+                return;
+            }
+
+            _clientId = firebaseCallback.result;
+        }
+
+        public void SetAnalyticsCollectionEnabled(bool enabled)
+        {
+            if (!isInitialized)
+                throw new FirebaseModuleNotInitializedException(GetType());
+
+            FirebaseWebGL_FirebaseAnalytics_setAnalyticsCollectionEnabled(enabled);
+        }
+
+        public void SetUserId(string userId)
+        {
+            if (!isInitialized)
+                throw new FirebaseModuleNotInitializedException(GetType());
+
+            FirebaseWebGL_FirebaseAnalytics_setUserId(userId);
+        }
+
+        public void SetUserProperties(Dictionary<string, string> properties)
+        {
+            if (!isInitialized)
+                throw new FirebaseModuleNotInitializedException(GetType());
+
+            var propertiesAsJson = JsonConvert.SerializeObject(properties);
+            FirebaseWebGL_FirebaseAnalytics_setUserProperties(propertiesAsJson);
+        }
+
+        public void SetDefaultEventParameters(Dictionary<string, string> parameters)
+        {
+            if (!isInitialized)
+                throw new FirebaseModuleNotInitializedException(GetType());
+
+            var parametersAsJson = JsonConvert.SerializeObject(parameters);
+            FirebaseWebGL_FirebaseAnalytics_setDefaultEventParameters(parametersAsJson);
+        }
+
+        public void SetConsent(Dictionary<FirebaseAnalyticsConsentType, FirebaseAnalyticsConsentValue> consent)
+        {
+            if (!isInitialized)
+                throw new FirebaseModuleNotInitializedException(GetType());
+
+            using (DictionaryPool<string, string>.Get(out var cache))
+            {
+                foreach (var kv in consent)
+                {
+                    var consentType = kv.Key;
+                    var key = consentType switch
+                    {
+                        FirebaseAnalyticsConsentType.AdPersonalization => "ad_personalization",
+                        FirebaseAnalyticsConsentType.AdStorage => "ad_storage",
+                        FirebaseAnalyticsConsentType.AdUserData => "ad_user_data",
+                        FirebaseAnalyticsConsentType.AnalyticsStorage => "analytics_storage",
+                        FirebaseAnalyticsConsentType.FunctionalityStorage => "functionality_storage",
+                        FirebaseAnalyticsConsentType.PersonalizationStorage => "personalization_storage",
+                        FirebaseAnalyticsConsentType.SecurityStorage => "security_storage",
+                        _ => throw new Exception($"unsupported consent type {consentType}")
+                    };
+
+                    var consentValue = kv.Value;
+                    var value = consentValue switch
+                    {
+                        FirebaseAnalyticsConsentValue.Granted => "granted",
+                        FirebaseAnalyticsConsentValue.Denied => "denied",
+                        _ => throw new Exception($"unsupported consent value {consentValue}")
+                    };
+                    cache[key] = value;
+                }
+
+                var consentAsJson = JsonConvert.SerializeObject(cache);
+                FirebaseWebGL_FirebaseAnalytics_setConsent(consentAsJson);
+            }
+        }
+
+        public void LogEvent(string eventName)
+        {
+            LogEvent(eventName, eventParams: null);
+        }
+
+        public void LogEvent(string eventName, Dictionary<string, object> eventParams)
+        { 
+            if (!isInitialized)
+                throw new FirebaseModuleNotInitializedException(GetType());
+
+            string eventParamsAsJson = eventParams != null ? JsonConvert.SerializeObject(eventParams) : null;
+            FirebaseWebGL_FirebaseAnalytics_logEvent(eventName, eventParamsAsJson);
+        }
+    }
+}
