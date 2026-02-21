@@ -15,31 +15,31 @@ const analyticsLibrary = {
 			plugin.sdk = document.firebaseSdk.analytics;
 			plugin.api = document.firebaseSdk.analyticsApi;
 			
-			console.log(`initialize: requested`);
+			console.log(`[Firebase Analytics] initialize: requested`);
 			plugin.api.isSupported(plugin.sdk).then(function(success) {
 				if (success) {
-					console.log(`initialize: initialized`);
+					console.log(`[Firebase Analytics] initialize: initialized`);
 					plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
 				}
 				else {
 					const error = 'Firebase Analytics is not supported';
-					console.error(`initialize: ${error}`);
+					console.error(`[Firebase Analytics] initialize: ${error}`);
 					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
 				}
 			}).catch(function(error) {
-				console.error(`initialize: ${error}`);
+				console.error(`[Firebase Analytics] initialize: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
 			});
 		},
 		
 		getGoogleAnalyticsClientId: function(requestId, callbackPtr) {
 			const plugin = this;
-			console.log(`getGoogleAnalyticsClientId: requested`);
+			console.log(`[Firebase Analytics] getGoogleAnalyticsClientId: requested`);
 			plugin.api.getGoogleAnalyticsClientId(plugin.sdk).then(function(clientId) {
-				console.log(`getGoogleAnalyticsClientId: ${clientId}`);
+				console.log(`[Firebase Analytics] getGoogleAnalyticsClientId: ${clientId}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, true, clientId, null);
 			}).catch(function(error) {
-				console.error(`getGoogleAnalyticsClientId: ${error}`);
+				console.error(`[Firebase Analytics] getGoogleAnalyticsClientId: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
 			});
 		},
@@ -47,42 +47,42 @@ const analyticsLibrary = {
 		setAnalyticsCollectionEnabled: function(enabled) {
 			const plugin = this;
 			plugin.api.setAnalyticsCollectionEnabled(plugin.sdk, enabled);
-			console.log(`setAnalyticsCollectionEnabled: ${enabled}`);
+			console.log(`[Firebase Analytics] setAnalyticsCollectionEnabled: ${enabled}`);
 		},
 		
 		setUserId: function(userId) {
 			const plugin = this;
 			plugin.api.setUserId(plugin.sdk, userId);
-			console.log(`setUserId: ${userId}`);
+			console.log(`[Firebase Analytics] setUserId: ${userId}`);
 		},
 		
 		setUserProperties: function(properties) {
 			const plugin = this;
 			plugin.api.setUserProperties(plugin.sdk, properties);
-			console.log(`setUserProperties: ${JSON.stringify(properties)}`);
+			console.log(`[Firebase Analytics] setUserProperties: ${JSON.stringify(properties)}`);
 		},
 		
 		setDefaultEventParameters: function(parameters) {
 			const plugin = this;
 			plugin.api.setDefaultEventParameters(plugin.sdk, parameters);
-			console.log(`setDefaultEventParameters: ${JSON.stringify(parameters)}`);
+			console.log(`[Firebase Analytics] setDefaultEventParameters: ${JSON.stringify(parameters)}`);
 		},
 		
 		setConsent: function(consent) {
 			const plugin = this;
 			plugin.api.setConsent(plugin.sdk, consent);
-			console.log(`setConsent: ${JSON.stringify(consent)}`);
+			console.log(`[Firebase Analytics] setConsent: ${JSON.stringify(consent)}`);
 		},
 		
 		logEvent: function(eventName, eventParams) {
 			const plugin = this;
 			if (eventParams != null) {
 				plugin.api.logEvent(plugin.sdk, eventName, eventParams);
-				console.log(`logEvent: name=${eventName}, params=[${JSON.stringify(eventParams)}]`);
+				console.log(`[Firebase Analytics] logEvent: name=${eventName}, params=[${JSON.stringify(eventParams)}]`);
 			}
 			else {
 				plugin.api.logEvent(plugin.sdk, eventName);
-				console.log(`logEvent: name=${eventName}`);
+				console.log(`[Firebase Analytics] logEvent: name=${eventName}`);
 			}
 		},
 	},	
