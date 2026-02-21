@@ -44,14 +44,20 @@ namespace FirebaseWebGL
         public void Initialize(Action<FirebaseCallback<bool>> firebaseCallback)
         {
             if (_isInitializing)
+            {
+                firebaseCallback?.Invoke(FirebaseCallback<bool>.Error(FirebaseCallbackErrors.InitializationIsAlreadyInProgress));
                 return;
+            }
 
-            if (isInitialized)
+            if (_isInitialized)
+            {
+                firebaseCallback?.Invoke(FirebaseCallback<bool>.Success(_isInitialized));
                 return;
+            }
 
             if (Application.isEditor)
             {
-                firebaseCallback?.Invoke(new FirebaseCallback<bool>(false));
+                firebaseCallback?.Invoke(FirebaseCallback<bool>.Success(false));
                 return;
             }
 
@@ -78,7 +84,7 @@ namespace FirebaseWebGL
 
             if (_clientId != null)
             {
-                firebaseCallback?.Invoke(new FirebaseCallback<string>(_clientId));
+                firebaseCallback?.Invoke(FirebaseCallback<string>.Success(_clientId));
                 return;
             }
 

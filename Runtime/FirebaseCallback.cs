@@ -15,23 +15,39 @@ namespace FirebaseWebGL
         [Preserve]
         public string error { get; set; }
 
+        private const int synchronizedId = 0;
+
         [Preserve]
         private FirebaseCallback()
         {
         }
 
         [Preserve]
-        public FirebaseCallback(T result)
+        public static FirebaseCallback<T> Success(T result)
         {
-            this.requestId = 0;
-            this.success = true;
-            this.result = result;
-            this.error = null;
+            return new FirebaseCallback<T>
+            {
+                requestId = synchronizedId,
+                success = true,
+                result = result,
+                error = null,
+            };
+        }
+
+        public static FirebaseCallback<T> Error(string error)
+        {
+            return new FirebaseCallback<T>
+            {
+                requestId = synchronizedId,
+                success = false,
+                result = default,
+                error = error
+            };
         }
 
         public bool IsCompletedSynchronously()
         {
-            return requestId == 0;
+            return requestId == synchronizedId;
         }
     }
 }
