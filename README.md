@@ -6,24 +6,30 @@ Naive implementation of the most popular Firebase modules for Web apps and games
 - **easy to use API** which similar to Firebase iOS/Android official plugin (with small differences).
 
 ## Which Firebase modules were included?
+- [x] App
+- [ ] App-Check
 - [ ] Auth
 - [x] Analytics
+- [ ] Database
 - [ ] Firestore
+- [ ] Functions
+- [x] Installations
 - [x] Messaging (limitations: no support for Service Worker 'onBackgroundMessage')
+- [ ] Performance
 - [x] Remote Config
+- [ ] Storage
 
 I hope that I'll add other modules as soon as possible.
 
 ## What's inside?
 - C# and JavaScript files
-- `Newtonsoft.Json` library as a dependency [Runtime]
 - `HtmlAgilityPack` library as a dependency [Editor]
 
 ## Installation
 ##### via Unity Package Manager
 The latest version can be installed via [package manager](https://docs.unity3d.com/Manual/upm-ui-giturl.html) using following git URL:
 ```
-https://github.com/am1goo/firebase-for-unity-webgl.git#0.3.1
+https://github.com/am1goo/firebase-for-unity-webgl.git#0.4.0
 ```
 
 ## Tested in
