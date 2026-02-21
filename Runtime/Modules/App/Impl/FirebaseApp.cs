@@ -10,6 +10,8 @@ namespace FirebaseWebGL
         private static extern void FirebaseWebGL_FirebaseApp_initalize();
         [DllImport("__Internal")]
         private static extern void FirebaseWebGL_FirebaseApp_deleteApp();
+        [DllImport("__Internal")]
+        private static extern void FirebaseWebGL_FirebaseApp_setLogLevel(int logLevel);
 
         private bool _isInitialized;
         public bool isInitialized => _isInitialized;
@@ -114,6 +116,14 @@ namespace FirebaseWebGL
                 _isInitialized = false;
                 onInitialized?.Invoke(_isInitialized);
             }
+        }
+
+        public void SetLogLevel(FirebaseAppLogLevel logLevel)
+        {
+            if (!_isInitialized)
+                throw new FirebaseModuleNotInitializedException(this);
+
+            FirebaseWebGL_FirebaseApp_setLogLevel((int)logLevel);
         }
     }
 }
