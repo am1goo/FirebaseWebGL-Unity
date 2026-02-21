@@ -22,6 +22,9 @@ namespace FirebaseWebGL
         private IFirebaseAnalytics _analytics;
         public IFirebaseAnalytics Analytics => _analytics;
 
+        private IFirebaseMessaging _messaging;
+        public IFirebaseMessaging Messaging => _messaging;
+
         ~FirebaseApp()
         {
             Dispose(false);
@@ -82,7 +85,7 @@ namespace FirebaseWebGL
             }
             if (settings.includeMessaging)
             {
-                //TODO: add FirebaseMessaging initialization here
+                _messaging = new FirebaseMessaging();
             }
             if (settings.includeRemoteConfig)
             {

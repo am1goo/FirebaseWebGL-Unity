@@ -88,6 +88,20 @@ namespace FirebaseWebGL
                 fs.Seek(0, SeekOrigin.Begin);
                 doc.Save(fs, utf8);
             }
+
+            var fiServiceWorker = new FileInfo(Path.Combine(outputPath, "firebase-messaging-sw.js"));
+            if (fiServiceWorker.Exists)
+                fiServiceWorker.Delete();
+
+            if (settings.includeMessaging)
+            {
+                using (var fs = fiServiceWorker.OpenWrite())
+                {
+                    //TODO: if you need support of onBackgroundMessage callback, you have to put additional code from:
+                    //https://github.com/firebase/quickstart-js/blob/master/messaging/firebase-messaging-sw.js
+                    fs.Flush();
+                }
+            }
         }
 
         private static string GenerateText(FirebaseSettings settings)
@@ -112,7 +126,8 @@ namespace FirebaseWebGL
             }
             if (settings.includeMessaging)
             {
-                sb.Append(indent).AppendLine("import { getMessaging } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js\";");
+                sb.Append(indent).AppendLine("import { getMessaging, isSupported as isSupportedMessaging, getToken, deleteToken, onMessage } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js\";");
+                sb.Append(indent).AppendLine("import { getMessaging as getMessagingSw, isSupported as isSupportedMessagingSw, experimentalSetDeliveryMetricsExportedToBigQueryEnabled } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging-sw.js\";");
             }
             if (settings.includeRemoteConfig)
             {
@@ -149,6 +164,9 @@ namespace FirebaseWebGL
             if (settings.includeMessaging)
             {
                 sb.Append(indent).AppendLine("firebaseSdk.messaging = getMessaging(app);");
+                sb.Append(indent).AppendLine("firebaseSdk.messagingApi = { isSupported: isSupportedMessaging, getToken, deleteToken, onMessage };");
+                sb.Append(indent).AppendLine("firebaseSdk.messagingSw = getMessagingSw(app);");
+                sb.Append(indent).AppendLine("firebaseSdk.messagingSwApi = { isSupported: isSupportedMessagingSw, experimentalSetDeliveryMetricsExportedToBigQueryEnabled };");
             }
             if (settings.includeRemoteConfig)
             {
