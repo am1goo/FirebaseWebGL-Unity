@@ -16,54 +16,72 @@ const firebaseMessagingLibrary = {
 			plugin.api = document.firebaseSdk.messagingApi;
 			
 			console.log(`[Firebase Messaging] initialize: requested`);
-			plugin.api.isSupported(plugin.sdk).then(function(success) {
-				if (success) {
-					if ('serviceWorker' in navigator) {
-						navigator.serviceWorker.register('./firebase-messaging-sw.js').then(function(registration) {
-							console.log(`[Firebase Messaging] initialize: scope=${registration.scope}`);
-							plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
-						}).catch(function(error) {
+			try {
+				plugin.api.isSupported(plugin.sdk).then(function(success) {
+					if (success) {
+						if ('serviceWorker' in navigator) {
+							navigator.serviceWorker.register('./firebase-messaging-sw.js').then(function(registration) {
+								console.log(`[Firebase Messaging] initialize: scope=${registration.scope}`);
+								plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
+							}).catch(function(error) {
+								console.error(`[Firebase Messaging] initialize: ${error}`);
+								plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+							});
+						}
+						else {
+							const error = 'Firebase Messaging cannot be registered';
 							console.error(`[Firebase Messaging] initialize: ${error}`);
 							plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-						});
+						}
 					}
 					else {
-						const error = 'Firebase Messaging cannot be registered';
+						const error = 'Firebase Messaging is not supported';
 						console.error(`[Firebase Messaging] initialize: ${error}`);
 						plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
 					}
-				}
-				else {
-					const error = 'Firebase Messaging is not supported';
+				}).catch(function(error) {
 					console.error(`[Firebase Messaging] initialize: ${error}`);
 					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-				}
-			}).catch(function(error) {
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Messaging] initialize: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		getToken: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.getToken(plugin.sdk).then(function(token) {
-				console.log(`[Firebase Messaging] getToken: token=${token}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, token, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.getToken(plugin.sdk).then(function(token) {
+					console.log(`[Firebase Messaging] getToken: token=${token}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, token, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Messaging] getToken: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Messaging] getToken: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		deleteToken: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.deleteToken(plugin.sdk).then(function(success) {
-				console.log(`[Firebase Messaging] deleteToken: ${(success ? "deleted" : "not deleted")}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.deleteToken(plugin.sdk).then(function(success) {
+					console.log(`[Firebase Messaging] deleteToken: ${(success ? "deleted" : "not deleted")}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Messaging] deleteToken: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Messaging] deleteToken: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		onMessage: function(instanceId, callbackPtr) {

@@ -16,64 +16,94 @@ const firebaseRemoteConfigLibrary = {
 			plugin.api = document.firebaseSdk.remoteConfigApi;
 			
 			console.log(`[Firebase Remote Config] initialize: requested`);
-			plugin.api.isSupported(plugin.sdk).then(function(success) {
-				if (success) {
-					console.log('[Firebase Remote Config] initialize: initialized');
-					plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
-				}
-				else {
-					const error = 'Firebase Remote Config is not supported';
+			try {
+				plugin.api.isSupported(plugin.sdk).then(function(success) {
+					if (success) {
+						console.log('[Firebase Remote Config] initialize: initialized');
+						plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
+					}
+					else {
+						const error = 'Firebase Remote Config is not supported';
+						console.error(`[Firebase Remote Config] initialize: ${error}`);
+						plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+					}
+				}).catch(function(error) {
 					console.error(`[Firebase Remote Config] initialize: ${error}`);
 					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-				}
-			}).catch(function(error) {
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Remote Config] initialize: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		activate: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.activate(plugin.sdk).then(function(success) {
-				console.log(`[Firebase Remote Config] activate: ${(success ? 'activated' : 'not activated')}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.activate(plugin.sdk).then(function(success) {
+					console.log(`[Firebase Remote Config] activate: ${(success ? 'activated' : 'not activated')}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Remote Config] activate: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Remote Config] activate: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		ensureInitialized: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.ensureInitialized(plugin.sdk).then(function() {
-				console.log('[Firebase Remote Config] ensureInitialized');
-				plugin.firebaseToUnity(requestId, callbackPtr, true, true, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.ensureInitialized(plugin.sdk).then(function() {
+					console.log('[Firebase Remote Config] ensureInitialized');
+					plugin.firebaseToUnity(requestId, callbackPtr, true, true, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Remote Config] ensureInitialized: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Remote Config] ensureInitialized: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		fetchAndActivate: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.fetchAndActivate(plugin.sdk).then(function(success) {
-				console.log(`[Firebase Remote Config] fetchAndActivate: ${(success ? 'activated' : 'not activated')}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, true, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.fetchAndActivate(plugin.sdk).then(function(success) {
+					console.log(`[Firebase Remote Config] fetchAndActivate: ${(success ? 'activated' : 'not activated')}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, true, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Remote Config] fetchAndActivate: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Remote Config] fetchAndActivate: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		fetchConfig: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.fetchConfig(plugin.sdk).then(function() {
-				console.log('[Firebase Remote Config] fetchConfig');
-				plugin.firebaseToUnity(requestId, callbackPtr, true, true, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.fetchConfig(plugin.sdk).then(function() {
+					console.log('[Firebase Remote Config] fetchConfig');
+					plugin.firebaseToUnity(requestId, callbackPtr, true, true, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Remote Config] fetchConfig: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Remote Config] fetchConfig: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		getKeys: function() {

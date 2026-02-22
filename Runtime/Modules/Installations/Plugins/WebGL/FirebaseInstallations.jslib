@@ -19,35 +19,53 @@ const firebaseInstallationsLibrary = {
 		
 		deleteInstallations: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.deleteInstallations(plugin.sdk).then(function(success) {
-				console.log(`[Firebase Installations] deleteInstallations: ${(success ? 'deleted' : 'not deleted')}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.deleteInstallations(plugin.sdk).then(function(success) {
+					console.log(`[Firebase Installations] deleteInstallations: ${(success ? 'deleted' : 'not deleted')}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Installations] deleteInstallations: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Installations] deleteInstallations: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		getId: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.getId(plugin.sdk).then(function(id) {
-				console.log(`[Firebase Installations] getId: id=${id}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, id, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.getId(plugin.sdk).then(function(id) {
+					console.log(`[Firebase Installations] getId: id=${id}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, id, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Installations] getId: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Installations] getId: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		getToken: function(forceRefresh, requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.getToken(plugin.sdk, forceRefresh).then(function(token) {
-				console.log(`[Firebase Installations] getToken: token=${token}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, token, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.getToken(plugin.sdk, forceRefresh).then(function(token) {
+					console.log(`[Firebase Installations] getToken: token=${token}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, token, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Installations] getToken: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Installations] getToken: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		onIdChange: function(instanceId, callbackPtr) {

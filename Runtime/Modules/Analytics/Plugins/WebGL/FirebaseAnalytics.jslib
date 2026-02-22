@@ -16,32 +16,44 @@ const firebaseAnalyticsLibrary = {
 			plugin.api = document.firebaseSdk.analyticsApi;
 			
 			console.log(`[Firebase Analytics] initialize: requested`);
-			plugin.api.isSupported(plugin.sdk).then(function(success) {
-				if (success) {
-					console.log(`[Firebase Analytics] initialize: initialized`);
-					plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
-				}
-				else {
-					const error = 'Firebase Analytics is not supported';
+			try {
+				plugin.api.isSupported(plugin.sdk).then(function(success) {
+					if (success) {
+						console.log(`[Firebase Analytics] initialize: initialized`);
+						plugin.firebaseToUnity(requestId, callbackPtr, true, success, null);
+					}
+					else {
+						const error = 'Firebase Analytics is not supported';
+						console.error(`[Firebase Analytics] initialize: ${error}`);
+						plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+					}
+				}).catch(function(error) {
 					console.error(`[Firebase Analytics] initialize: ${error}`);
 					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-				}
-			}).catch(function(error) {
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Analytics] initialize: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		getGoogleAnalyticsClientId: function(requestId, callbackPtr) {
 			const plugin = this;
 			console.log(`[Firebase Analytics] getGoogleAnalyticsClientId: requested`);
-			plugin.api.getGoogleAnalyticsClientId(plugin.sdk).then(function(clientId) {
-				console.log(`[Firebase Analytics] getGoogleAnalyticsClientId: ${clientId}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, clientId, null);
-			}).catch(function(error) {
+				try {
+				plugin.api.getGoogleAnalyticsClientId(plugin.sdk).then(function(clientId) {
+					console.log(`[Firebase Analytics] getGoogleAnalyticsClientId: ${clientId}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, clientId, null);
+				}).catch(function(error) {
+					console.error(`[Firebase Analytics] getGoogleAnalyticsClientId: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase Analytics] getGoogleAnalyticsClientId: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		setAnalyticsCollectionEnabled: function(enabled) {

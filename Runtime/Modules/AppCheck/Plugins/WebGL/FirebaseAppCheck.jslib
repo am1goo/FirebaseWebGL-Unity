@@ -20,26 +20,38 @@ const firebaseAppCheckLibrary = {
 		
 		getLimitedUseToken: function(requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.getLimitedUseToken(plugin.sdk).then(function(limitedUseTokenResult) {
-				const token = limitedUseTokenResult.token;
-				console.log(`[Firebase AppCheck] getLimitedUseToken: limitedUseToken=${token}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, token, null);
-			}).catch(function(error) {
+			try {
+				plugin.api.getLimitedUseToken(plugin.sdk).then(function(limitedUseTokenResult) {
+					const token = limitedUseTokenResult.token;
+					console.log(`[Firebase AppCheck] getLimitedUseToken: limitedUseToken=${token}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, token, null);
+				}).catch(function(error) {
+					console.error(`[Firebase AppCheck] getLimitedUseToken: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase AppCheck] getLimitedUseToken: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		getToken: function(forceRefresh, requestId, callbackPtr) {
 			const plugin = this;
-			plugin.api.getToken(plugin.sdk, forceRefresh).then(function(tokenResult) {
-				const token = tokenResult.token;
-				console.log(`[Firebase AppCheck] getToken: token=${token}`);
-				plugin.firebaseToUnity(requestId, callbackPtr, true, token, null);
-			}).catch(function(error) {
+			try{
+				plugin.api.getToken(plugin.sdk, forceRefresh).then(function(tokenResult) {
+					const token = tokenResult.token;
+					console.log(`[Firebase AppCheck] getToken: token=${token}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, true, token, null);
+				}).catch(function(error) {
+					console.error(`[Firebase AppCheck] getToken: ${error}`);
+					plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
+				});
+			}
+			catch(error) {
 				console.error(`[Firebase AppCheck] getToken: ${error}`);
 				plugin.firebaseToUnity(requestId, callbackPtr, false, null, error);
-			});
+			}
 		},
 		
 		onTokenChanged: function(instanceId, callbackPtr) {
