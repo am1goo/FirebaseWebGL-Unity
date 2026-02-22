@@ -24,6 +24,9 @@ namespace FirebaseWebGL
         private IFirebaseAnalytics _analytics;
         public IFirebaseAnalytics Analytics => _analytics;
 
+        private IFirebaseAppCheck _appCheck;
+        public IFirebaseAppCheck AppCheck => _appCheck;
+
         private IFirebaseMessaging _messaging;
         public IFirebaseMessaging Messaging => _messaging;
 
@@ -89,6 +92,10 @@ namespace FirebaseWebGL
             if (settings.includeAnalytics)
             {
                 _analytics = new FirebaseAnalytics();
+            }
+            if (settings.includeAppCheck)
+            {
+                _appCheck = new FirebaseAppCheck();
             }
             if (settings.includeFirestore)
             {

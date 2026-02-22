@@ -120,13 +120,17 @@ namespace FirebaseWebGL
             {
                 sb.Append(indent).AppendLine("import { getAnalytics, isSupported as isSupportedAnalytics, getGoogleAnalyticsClientId, logEvent, setAnalyticsCollectionEnabled, setConsent, setDefaultEventParameters, setUserId, setUserProperties } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js\";");
             }
+            if (settings.includeAppCheck)
+            {
+                sb.Append(indent).AppendLine("import { initializeAppCheck, getLimitedUseToken as getLimitedUseTokenAppCheck, getToken as getTokenAppCheck, onTokenChanged as onTokenChangedAppCheck, setTokenAutoRefreshEnabled as setTokenAutoRefreshEnabledAppCheck, CustomProvider, ReCaptchaEnterpriseProvider, ReCaptchaV3Provider } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-app-check.js\";");
+            }
             if (settings.includeFirestore)
             {
                 sb.Append(indent).AppendLine("import { getFirestore } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js\";");
             }
             if (settings.includeMessaging)
             {
-                sb.Append(indent).AppendLine("import { getMessaging, isSupported as isSupportedMessaging, getToken, deleteToken, onMessage } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js\";");
+                sb.Append(indent).AppendLine("import { getMessaging, isSupported as isSupportedMessaging, getToken as getTokenMessaging, deleteToken, onMessage } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js\";");
                 sb.Append(indent).AppendLine("import { getMessaging as getMessagingInSw, isSupported as isSupportedMessagingInSw, experimentalSetDeliveryMetricsExportedToBigQueryEnabled } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging-sw.js\";");
             }
             if (settings.includeRemoteConfig)
@@ -166,6 +170,20 @@ namespace FirebaseWebGL
                 sb.Append(indent).AppendLine("firebaseSdk.analytics = getAnalytics(app);");
                 sb.Append(indent).AppendLine("firebaseSdk.analyticsApi = { isSupported: isSupportedAnalytics, getGoogleAnalyticsClientId, logEvent, setAnalyticsCollectionEnabled, setConsent, setDefaultEventParameters, setUserId, setUserProperties };");
             }
+            if (settings.includeAppCheck)
+            {
+                var provider = settings.includeAppCheckSettings.providerType switch
+                {
+                    FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaV3 => "new ReCaptchaV3Provider(\'" + settings.includeAppCheckSettings.reCaptchaV3PublicKey + "\')",
+                    FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaEnterprise => "new ReCaptchaEnterpriseProvider(\'" + settings.includeAppCheckSettings.reCaptchaEnterprisePublicKey + "\')",
+                    _ => throw new Exception($"unsupported provider type {settings.includeAppCheckSettings.providerType}"),
+                };
+                var reCaptchaV3PublicKey = settings.includeAppCheckSettings.reCaptchaV3PublicKey;
+                var isTokenAutoRefreshEnabled = settings.includeAppCheckSettings.isTokenAutoRefreshEnabled;
+                sb.Append(indent).AppendLine("const appCheckOptions = { provider: " + provider + ", isTokenAutoRefreshEnabled: " + (isTokenAutoRefreshEnabled ? 1 : 0) + " };");
+                sb.Append(indent).AppendLine("firebaseSdk.appCheck = initializeAppCheck(app, appCheckOptions);");
+                sb.Append(indent).AppendLine("firebaseSdk.appCheckApi = { getLimitedUseToken: getLimitedUseTokenAppCheck, getToken: getTokenAppCheck, onTokenChanged: onTokenChangedAppCheck, setTokenAutoRefreshEnabled: setTokenAutoRefreshEnabledAppCheck };");
+            }
             if (settings.includeFirestore)
             {
                 sb.Append(indent).AppendLine("firebaseSdk.firestore = getFirestore(app);");
@@ -173,7 +191,7 @@ namespace FirebaseWebGL
             if (settings.includeMessaging)
             {
                 sb.Append(indent).AppendLine("firebaseSdk.messaging = getMessaging(app);");
-                sb.Append(indent).AppendLine("firebaseSdk.messagingApi = { isSupported: isSupportedMessaging, getToken, deleteToken, onMessage };");
+                sb.Append(indent).AppendLine("firebaseSdk.messagingApi = { isSupported: isSupportedMessaging, getToken: getTokenMessaging, deleteToken, onMessage };");
                 sb.Append(indent).AppendLine("firebaseSdk.messagingSw = getMessagingInSw(app);");
                 sb.Append(indent).AppendLine("firebaseSdk.messagingSwApi = { isSupported: isSupportedMessagingInSw, experimentalSetDeliveryMetricsExportedToBigQueryEnabled };");
             }

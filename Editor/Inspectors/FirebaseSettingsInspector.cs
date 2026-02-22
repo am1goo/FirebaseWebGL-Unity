@@ -1,46 +1,126 @@
-using FirebaseWebGL;
+using System;
 using UnityEditor;
+using UnityEngine;
 
-[CustomEditor(typeof(FirebaseSettings))]
-public sealed class FirebaseSettingsInspector : Editor
-{
-    private SerializedProperty _includeAuth;
-    private SerializedProperty _includeAnalytics;
-    private SerializedProperty _includeFirestore;
-    private SerializedProperty _includeMessaging;
-    private SerializedProperty _includeMessagingServiceWorker;
-    private SerializedProperty _includeRemoteConfig;
-    private SerializedProperty _includeInstallations;
-    private SerializedProperty _includePerformance;
-
-    private void OnEnable()
+namespace FirebaseWebGL {
+    [CustomEditor(typeof(FirebaseSettings))]
+    public sealed class FirebaseSettingsInspector : Editor
     {
-        _includeAuth = serializedObject.FindProperty(nameof(_includeAuth));
-        _includeAnalytics = serializedObject.FindProperty(nameof(_includeAnalytics));
-        _includeFirestore = serializedObject.FindProperty(nameof(_includeFirestore));
-        _includeMessaging = serializedObject.FindProperty(nameof(_includeMessaging));
-        _includeMessagingServiceWorker = serializedObject.FindProperty(nameof(_includeMessagingServiceWorker));
-        _includeRemoteConfig = serializedObject.FindProperty(nameof(_includeRemoteConfig));
-        _includeInstallations = serializedObject.FindProperty(nameof(_includeInstallations));
-        _includePerformance = serializedObject.FindProperty(nameof(_includePerformance));
-    }
+        private SerializedProperty _includeAuth;
+        private SerializedProperty _includeAnalytics;
+        private SerializedProperty _includeAppCheck;
+        private SerializedProperty _includeAppCheckSettings;
+        private SerializedProperty _includeFirestore;
+        private SerializedProperty _includeMessaging;
+        private SerializedProperty _includeMessagingServiceWorker;
+        private SerializedProperty _includeRemoteConfig;
+        private SerializedProperty _includeInstallations;
+        private SerializedProperty _includePerformance;
 
-    public override void OnInspectorGUI()
-    {
-        base.OnInspectorGUI();
-
-        EditorGUILayout.PropertyField(_includeAuth);
-        EditorGUILayout.PropertyField(_includeAnalytics);
-        EditorGUILayout.PropertyField(_includeFirestore);
-        EditorGUILayout.PropertyField(_includeMessaging);
-        if (_includeMessaging.boolValue)
+        private void OnEnable()
         {
-            EditorGUILayout.PropertyField(_includeMessagingServiceWorker);
+            _includeAuth = serializedObject.FindProperty(nameof(_includeAuth));
+            _includeAnalytics = serializedObject.FindProperty(nameof(_includeAnalytics));
+            _includeAppCheck = serializedObject.FindProperty(nameof(_includeAppCheck));
+            _includeAppCheckSettings = serializedObject.FindProperty(nameof(_includeAppCheckSettings));
+            _includeFirestore = serializedObject.FindProperty(nameof(_includeFirestore));
+            _includeMessaging = serializedObject.FindProperty(nameof(_includeMessaging));
+            _includeMessagingServiceWorker = serializedObject.FindProperty(nameof(_includeMessagingServiceWorker));
+            _includeRemoteConfig = serializedObject.FindProperty(nameof(_includeRemoteConfig));
+            _includeInstallations = serializedObject.FindProperty(nameof(_includeInstallations));
+            _includePerformance = serializedObject.FindProperty(nameof(_includePerformance));
         }
-        EditorGUILayout.PropertyField(_includeRemoteConfig);
-        EditorGUILayout.PropertyField(_includeInstallations);
-        EditorGUILayout.PropertyField(_includePerformance);
 
-        serializedObject.ApplyModifiedProperties();
+        public override void OnInspectorGUI()
+        {
+            base.OnInspectorGUI();
+
+            EditorGUILayout.PropertyField(_includeAuth);
+            EditorGUILayout.PropertyField(_includeAnalytics);
+            EditorGUILayout.PropertyField(_includeAppCheck);
+            if (_includeAppCheck.boolValue)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(_includeAppCheckSettings, includeChildren: true);
+                EditorGUI.indentLevel--;
+            }
+            EditorGUILayout.PropertyField(_includeFirestore);
+            EditorGUILayout.PropertyField(_includeMessaging);
+            if (_includeMessaging.boolValue)
+            {
+                EditorGUILayout.PropertyField(_includeMessagingServiceWorker, includeChildren: true);
+            }
+            EditorGUILayout.PropertyField(_includeRemoteConfig);
+            EditorGUILayout.PropertyField(_includeInstallations);
+            EditorGUILayout.PropertyField(_includePerformance);
+
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        [CustomPropertyDrawer(typeof(FirebaseSettings.AppCheckSettings))]
+        sealed class AppCheckSettingsDrawer : PropertyDrawer
+        {
+            private static readonly FirebaseSettings.AppCheckSettings.ProviderType[] providerTypes = (FirebaseSettings.AppCheckSettings.ProviderType[])Enum.GetValues(typeof(FirebaseSettings.AppCheckSettings.ProviderType));
+
+            public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+            {
+                var height = 0.0f;
+                
+                var providerType = property.FindPropertyRelative("_providerType");
+                var providerTypeValue = providerTypes[providerType.enumValueIndex];
+                height += EditorGUI.GetPropertyHeight(providerType);
+
+                switch (providerTypeValue)
+                {
+                    case FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaV3:
+                        var reCaptchaV3PublicKey = property.FindPropertyRelative("_reCaptchaV3PublicKey");
+                        height += EditorGUI.GetPropertyHeight(reCaptchaV3PublicKey);
+                        break;
+
+                    case FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaEnterprise:
+                        var reCaptchaEnterprisePublicKey = property.FindPropertyRelative("_reCaptchaEnterprisePublicKey");
+                        height += EditorGUI.GetPropertyHeight(reCaptchaEnterprisePublicKey);
+                        break;
+                }
+
+                var isTokenAutoRefreshEnabled = property.FindPropertyRelative("_isTokenAutoRefreshEnabled");
+                height += EditorGUI.GetPropertyHeight(isTokenAutoRefreshEnabled);
+
+                return height;
+            }
+
+            public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+            {
+                var r = position;
+
+                var providerType = property.FindPropertyRelative("_providerType");
+                var providerTypeValue = providerTypes[providerType.enumValueIndex];
+                r.height = EditorGUI.GetPropertyHeight(providerType);
+                EditorGUI.PropertyField(r, providerType);
+                r.y += r.height;
+
+                switch (providerTypeValue)
+                {
+                    case FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaV3:
+                        var reCaptchaV3PublicKey = property.FindPropertyRelative("_reCaptchaV3PublicKey");
+                        r.height = EditorGUI.GetPropertyHeight(reCaptchaV3PublicKey);
+                        EditorGUI.PropertyField(r, reCaptchaV3PublicKey);
+                        r.y += r.height;
+                        break;
+
+                    case FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaEnterprise:
+                        var reCaptchaEnterprisePublicKey = property.FindPropertyRelative("_reCaptchaEnterprisePublicKey");
+                        r.height = EditorGUI.GetPropertyHeight(reCaptchaEnterprisePublicKey);
+                        EditorGUI.PropertyField(r, reCaptchaEnterprisePublicKey);
+                        r.y += r.height;
+                        break;
+                }
+
+                var isTokenAutoRefreshEnabled = property.FindPropertyRelative("_isTokenAutoRefreshEnabled");
+                r.height = EditorGUI.GetPropertyHeight(isTokenAutoRefreshEnabled);
+                EditorGUI.PropertyField(r, isTokenAutoRefreshEnabled);
+                r.y += r.height;
+            }
+        }
     }
 }

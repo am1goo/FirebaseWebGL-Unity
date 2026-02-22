@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace FirebaseWebGL
@@ -35,6 +36,12 @@ namespace FirebaseWebGL
         private bool _includeAnalytics;
         public bool includeAnalytics => _includeAnalytics;
         [SerializeField, HideInInspector]
+        private bool _includeAppCheck;
+        public bool includeAppCheck => _includeAppCheck;
+        [SerializeField, HideInInspector]
+        private AppCheckSettings _includeAppCheckSettings;
+        public AppCheckSettings includeAppCheckSettings => _includeAppCheckSettings;
+        [SerializeField, HideInInspector]
         private bool _includeFirestore;
         public bool includeFirestore => _includeFirestore;
         [SerializeField, HideInInspector]
@@ -63,6 +70,29 @@ namespace FirebaseWebGL
                     _instance = Resources.Load<FirebaseSettings>(nameof(FirebaseSettings));
                 }
                 return _instance;
+            }
+        }
+
+        [Serializable]
+        public sealed class AppCheckSettings
+        {
+            [SerializeField]
+            private ProviderType _providerType;
+            public ProviderType providerType => _providerType;
+            [SerializeField]
+            private string _reCaptchaV3PublicKey;
+            public string reCaptchaV3PublicKey => _reCaptchaV3PublicKey;
+            [SerializeField]
+            private string _reCaptchaEnterprisePublicKey;
+            public string reCaptchaEnterprisePublicKey => _reCaptchaEnterprisePublicKey;
+            [SerializeField]
+            private bool _isTokenAutoRefreshEnabled;
+            public bool isTokenAutoRefreshEnabled => _isTokenAutoRefreshEnabled;
+
+            public enum ProviderType : byte
+            {
+                ReCaptchaV3 = 0,
+                ReCaptchaEnterprise = 1,
             }
         }
     }
