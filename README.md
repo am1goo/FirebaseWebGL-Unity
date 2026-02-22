@@ -22,7 +22,7 @@ Naive implementation of the most popular Firebase modules for Web apps and games
 I hope that I'll add other modules as soon as possible.
 
 ## What's inside?
-- C# and JavaScript files
+- Just few `*.cs` and `*.jslib` files [Source Code]
 - `HtmlAgilityPack` library as a dependency [Editor]
 
 ## Installation
@@ -31,6 +31,9 @@ The latest version can be installed via [package manager](https://docs.unity3d.c
 ```
 https://github.com/am1goo/FirebaseWebGL-Unity.git#0.6.0
 ```
+
+## Extensions
+- **UniTask extensions** package: [com.am1goo.firebase.webgl.unitask](https://github.com/am1goo/FirebaseWebGL-Unity-UniTask)
 
 ## How to use
 #### Create a Firebase App
