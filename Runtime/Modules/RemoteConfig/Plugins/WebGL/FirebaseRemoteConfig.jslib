@@ -111,7 +111,7 @@ const firebaseRemoteConfigLibrary = {
 			plugin.callbacks.onConfigUpdateUnsubscribe = plugin.api.onConfigUpdate(plugin.sdk, {
 				next: (configUpdate) => {
 					const updatedKeys = Array.from(configUpdate.getUpdatedKeys());
-					plugin.firebaseToUnity(instanceId, callbackPtr, true, updatedKeys, error);
+					plugin.firebaseToUnity(instanceId, callbackPtr, true, updatedKeys, null);
 					console.log(`[Firebase Remote Config] onConfigUpdate: ${updatedKeys}`);
 				},
 				error: (error) => {
