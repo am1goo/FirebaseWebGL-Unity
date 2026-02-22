@@ -1,6 +1,6 @@
 {
     "name": "com.am1goo.firebase.webgl",
-    "version": "0.5.1",
+    "version": "0.6.0",
     "displayName": "Firebase for WebGL",
     "description": "Naive wrapper over JavaScript Firebase library",
     "unity": "2022.3",
@@ -10,12 +10,13 @@
     "keywords": [
         "realtime",
         "firebase",
-		"app",
+        "app",
+        "appcheck",
         "analytics",
-		"installations",
-		"messaging",
-		"remoteconfig",
-		"performance"
+        "installations",
+        "messaging",
+        "remoteconfig",
+        "performance"
     ],
     "author": {
         "name": "Pavel 'am1goo' Shestakov",

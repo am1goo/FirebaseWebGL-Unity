@@ -7,7 +7,7 @@ Naive implementation of the most popular Firebase modules for Web apps and games
 
 ## Which Firebase modules were included?
 - [x] App
-- [ ] App-Check
+- [x] App-Check (limitations: no support for Custom Providers, ReCAPTCHA v3 and ReCAPTCHA Enterprise only)
 - [ ] Auth
 - [x] Analytics
 - [ ] Database
@@ -29,7 +29,7 @@ I hope that I'll add other modules as soon as possible.
 ##### via Unity Package Manager
 The latest version can be installed via [package manager](https://docs.unity3d.com/Manual/upm-ui-giturl.html) using following git URL:
 ```
-https://github.com/am1goo/FirebaseWebGL-Unity.git#0.5.1
+https://github.com/am1goo/FirebaseWebGL-Unity.git#0.6.0
 ```
 
 ## How to use
