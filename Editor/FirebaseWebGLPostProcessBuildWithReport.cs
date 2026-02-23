@@ -168,6 +168,7 @@ namespace FirebaseWebGL
             if (settings.includeAuth)
             {
                 sb.Append(indent).AppendLine("firebaseSdk.auth = getAuth(app);");
+                sb.Append(indent).AppendLine("firebaseSdk.authApi = {}");
             }
             if (settings.includeAnalytics)
             {

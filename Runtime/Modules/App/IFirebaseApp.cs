@@ -2,6 +2,7 @@ namespace FirebaseWebGL
 {
     public interface IFirebaseApp : IFirebaseModule
     {
+        IFirebaseAuth Auth { get; }
         IFirebaseAnalytics Analytics { get; }
         IFirebaseAppCheck AppCheck { get; }
         IFirebaseMessaging Messaging { get; }

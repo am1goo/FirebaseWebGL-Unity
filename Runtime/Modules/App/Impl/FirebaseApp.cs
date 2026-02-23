@@ -21,6 +21,9 @@ namespace FirebaseWebGL
         private bool _isDisposed;
         public bool isDisposed => _isDisposed;
 
+        private IFirebaseAuth _auth;
+        public IFirebaseAuth Auth => _auth;
+
         private IFirebaseAnalytics _analytics;
         public IFirebaseAnalytics Analytics => _analytics;
 
@@ -106,7 +109,7 @@ namespace FirebaseWebGL
 
             if (settings.includeAuth)
             {
-                //TODO: add FirebaseAuth initialization here
+                _auth = new FirebaseAuth();
             }
             if (settings.includeAnalytics)
             {
