@@ -4,6 +4,7 @@ namespace FirebaseWebGL
     {
         IFirebaseAnalytics Analytics { get; }
         IFirebaseAppCheck AppCheck { get; }
+        IFirebaseFunctions Functions { get; }
         IFirebaseMessaging Messaging { get; }
         IFirebaseRemoteConfig RemoteConfig { get; }
         IFirebaseInstallations Installations { get; }

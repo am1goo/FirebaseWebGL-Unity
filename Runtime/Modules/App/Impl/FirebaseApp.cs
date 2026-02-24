@@ -27,6 +27,9 @@ namespace FirebaseWebGL
         private IFirebaseAppCheck _appCheck;
         public IFirebaseAppCheck AppCheck => _appCheck;
 
+        private IFirebaseFunctions _functions;
+        public IFirebaseFunctions Functions => _functions;
+
         private IFirebaseMessaging _messaging;
         public IFirebaseMessaging Messaging => _messaging;
 
@@ -116,9 +119,9 @@ namespace FirebaseWebGL
             {
                 _appCheck = new FirebaseAppCheck();
             }
-            if (settings.includeFirestore)
+            if (settings.includeFunctions)
             {
-                //TODO: add FirebaseFirestore initialization here
+                _functions = new FirebaseFunctions();
             }
             if (settings.includeMessaging)
             {
