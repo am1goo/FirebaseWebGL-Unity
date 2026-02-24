@@ -1,14 +1,15 @@
 #if UNITY_WEBGL
 using HtmlAgilityPack;
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Net.Http;
 using System.Text;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace FirebaseWebGL
+namespace FirebaseWebGL.Editor
 {
     public class FirebaseWebGLPostProcessBuildWithReport : IPostprocessBuildWithReport
     {
@@ -16,6 +17,9 @@ namespace FirebaseWebGL
 
         private const string indexFilename = "index.html";
         private const string remarkValue = "injected-by-firebase-for-webgl-plugin";
+        private const string bundledFolder = "./FirebaseBundle";
+        private const string indent = "  ";
+        private const string rootName = "firebaseSdk";
         private static readonly Encoding utf8 = new UTF8Encoding(false);
 
         public void OnPostprocessBuild(BuildReport report)
@@ -74,8 +78,185 @@ namespace FirebaseWebGL
             if (string.IsNullOrEmpty(settings.measurementId))
                 throw new Exception($"{nameof(settings.measurementId)} is not defined");
 
-            var textToInject = HtmlNode.CreateNode(GenerateText(settings));
+            var scriptsMap = new Dictionary<string, Uri>
+            {
+                { "app", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js") },
+                { "auth", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js") },
+                { "analytics", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js") },
+                { "appCheck", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-app-check.js") },
+                { "firestore", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js") },
+                { "messaging", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js") },
+                { "messagingSw", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging-sw.js") },
+                { "remoteConfig", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-remote-config.js") },
+                { "installations", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-installations.js") },
+                { "performance", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-performance.js") },
+                { "storage", new Uri("https://www.gstatic.com/firebasejs/12.9.0/firebase-storage.js") }
+            };
 
+            var scriptsOnCDNs = ModularApiScripts.Remote(scriptsMap);
+            //TODO: added 'bundled modules' here later
+            var scriptsToInject = scriptsOnCDNs;
+
+            var injectors = new List<ModularApiInjector>();
+            if (true) //always have to add Firebase App module
+            {
+                var app = new ModularApiInjector(rootName, "app", "appApi", scriptsToInject["app"], new[]
+                {
+                    "initializeApp", "setLogLevel",
+                }, (postfix) =>
+                {
+                    var injectConfig = $"{{ apiKey: \"{settings.apiKey}\", authDomain: \"{settings.authDomain}\", projectId: \"{settings.projectId}\", storageBucket: \"{settings.storageBucket}\", messagingSenderId: \"{settings.messagingSenderId}\", appId: \"{settings.appId}\", measurementId: \"{settings.measurementId}\" }}";
+                    return $"initializeApp{postfix}({injectConfig})";
+                }, usePostfix: false);
+                injectors.Add(app);
+            }
+            if (settings.includeAuth)
+            {
+                var auth = new ModularApiInjector(rootName, "auth", "authApi", scriptsToInject["auth"], new[]
+                {
+                    "getAuth",
+                }, (postfix) =>
+                {
+                    return $"getAuth{postfix}({rootName}.app)";
+                }, usePostfix: true);
+                injectors.Add(auth);
+            }
+            if (settings.includeAnalytics)
+            {
+                var analytics = new ModularApiInjector(rootName, "analytics", "analyticsApi", scriptsToInject["analytics"], new[]
+                {
+                    "getAnalytics", "isSupported", "getGoogleAnalyticsClientId", "logEvent", "setAnalyticsCollectionEnabled", "setConsent", "setDefaultEventParameters", "setUserId", "setUserProperties",
+                }, (postfix) =>
+                {
+                    return $"getAnalytics{postfix}({rootName}.app)";
+                }, usePostfix: true);
+                injectors.Add(analytics);
+            }
+            if (settings.includeAppCheck)
+            {
+                var appCheck = new ModularApiInjector(rootName, "appCheck", "appCheckApi", scriptsToInject["appCheck"], new[]
+                {
+                    "initializeAppCheck", "getLimitedUseToken", "getToken", "onTokenChanged", "setTokenAutoRefreshEnabled", "CustomProvider", "ReCaptchaEnterpriseProvider", "ReCaptchaV3Provider"
+                }, (postfix) =>
+                {
+                    var provider = settings.includeAppCheckSettings.providerType switch
+                    {
+                        FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaV3 => $"new ReCaptchaV3Provider{postfix}(\'" + settings.includeAppCheckSettings.reCaptchaV3PublicKey + "\')",
+                        FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaEnterprise => $"new ReCaptchaEnterpriseProvider{postfix}(\'" + settings.includeAppCheckSettings.reCaptchaEnterprisePublicKey + "\')",
+                        _ => throw new Exception($"unsupported provider type {settings.includeAppCheckSettings.providerType}"),
+                    };
+                    var reCaptchaV3PublicKey = settings.includeAppCheckSettings.reCaptchaV3PublicKey;
+                    var isTokenAutoRefreshEnabled = settings.includeAppCheckSettings.isTokenAutoRefreshEnabled;
+
+                    var injectOptions = $"{{ provider: {provider}, isTokenAutoRefreshEnabled: {(isTokenAutoRefreshEnabled ? 1 : 0)} }}";
+                    return $"initializeAppCheck{postfix}({rootName}.app, {injectOptions})";
+                }, usePostfix: true);
+                injectors.Add(appCheck);
+            }
+            if (settings.includeFirestore)
+            {
+                var firestore = new ModularApiInjector(rootName, "firestore", "firestoreApi", scriptsToInject["firestore"], new[]
+                {
+                    "getFirestore",
+                }, (postfix) =>
+                {
+                    return $"getFirestore{postfix}({rootName}.app)";
+                }, usePostfix: true);
+                injectors.Add(firestore);
+            }
+            if (settings.includeMessaging)
+            {
+                var messaging = new ModularApiInjector(rootName, "messaging", "messagingApi", scriptsToInject["messaging"], new[]
+                {
+                    "getMessaging", "isSupported", "getToken", "deleteToken", "onMessage",
+                }, (postfix) =>
+                {
+                    return $"getMessaging{postfix}({rootName}.app)";
+                }, usePostfix: true);
+                injectors.Add(messaging);
+
+                if (settings.includeMessagingSettings.enableServiceWorker)
+                {
+                    var messagingSw = new ModularApiInjector(rootName, "messagingSw", "messagingSwApi", scriptsToInject["messagingSw"], new[]
+                    {
+                        "getMessaging", "isSupported", "experimentalSetDeliveryMetricsExportedToBigQueryEnabled",
+                    }, (postfix) =>
+                    {
+                        return $"getMessaging{postfix}({rootName}.app)";
+                    }, usePostfix: true);
+                    injectors.Add(messagingSw);
+                }
+            }
+            if (settings.includeRemoteConfig)
+            {
+                var remoteConfig = new ModularApiInjector(rootName, "remoteConfig", "remoteConfigApi", scriptsToInject["remoteConfig"], new[]
+                {
+                    "getRemoteConfig", "isSupported", "activate", "ensureInitialized", "fetchAndActivate", "fetchConfig", "getAll", "getBoolean", "getNumber", "getString", "getValue", "onConfigUpdate", "setCustomSignals", "setLogLevel",
+                }, (postfix) =>
+                {
+                    return $"getRemoteConfig{postfix}({rootName}.app)";
+                }, usePostfix: true);
+                injectors.Add(remoteConfig);
+            }
+
+            if (settings.includeInstallations)
+            {
+                var installations = new ModularApiInjector(rootName, "installations", "installationsApi", scriptsToInject["installations"], new[]
+                {
+                    "getInstallations", "deleteInstallations", "getId", "getToken", "onIdChange",
+                }, (postfix) =>
+                {
+                    return $"getInstallations{postfix}({rootName}.app)";
+                }, usePostfix: true);
+                injectors.Add(installations);
+            }
+
+            if (settings.includePerformance)
+            {
+                var performance = new ModularApiInjector(rootName, "performance", "performanceApi", scriptsToInject["performance"], new[]
+                {
+                    "getPerformance", "trace",
+                }, (postfix) =>
+                {
+                    return $"getPerformance{postfix}({rootName}.app)";
+                }, usePostfix: true);
+                injectors.Add(performance);
+            }
+
+            if (settings.includeStorage)
+            { 
+                var storage = new ModularApiInjector(rootName, "storage", "storageApi", scriptsToInject["storage"], new[]
+                {
+                    "getStorage", "connectStorageEmulator", "deleteObject", "getBlob", "getBytes", "getDownloadURL", "getMetadata", "getStream", "list", "ref", "updateMetadata", "uploadBytes", "uploadBytesResumable", "uploadString",
+                }, (postfix) =>
+                {
+                    var bucketUrl = settings.includeStorageSettings.bucketUrl;
+                    if (!string.IsNullOrWhiteSpace(bucketUrl))
+                    {
+                        var uri = default(Uri);
+                        try
+                        {
+                            uri = new Uri(bucketUrl);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception($"{nameof(bucketUrl)} cannot be parsed as uri", ex);
+                        }
+
+                        if (uri.Scheme != "gs")
+                            throw new Exception($"{nameof(bucketUrl)} should starts with 'gs://' scheme");
+
+                        return $"getStorage{postfix}({rootName}.app, \'" + uri.ToString() + "\')";
+                    }
+                    else
+                    {
+                        return $"getStorage{postfix}({rootName}.app)";
+                    }
+                }, usePostfix: true);
+                injectors.Add(storage);
+            }
+
+            var textToInject = HtmlNode.CreateNode(GenerateText(settings, injectors));
             var nodeToInject = new HtmlNode(HtmlNodeType.Element, doc, 0);
             nodeToInject.Name = "script";
             nodeToInject.Attributes.Append("type", "module");
@@ -90,13 +271,17 @@ namespace FirebaseWebGL
                 doc.Save(fs, utf8);
             }
 
-            var fiServiceWorker = new FileInfo(Path.Combine(outputPath, "firebase-messaging-sw.js"));
-            if (fiServiceWorker.Exists)
-                fiServiceWorker.Delete();
+            var bundleFolderInfo = new DirectoryInfo(Path.Combine(outputPath, bundledFolder));
+            if (bundleFolderInfo.Exists)
+                bundleFolderInfo.Delete(recursive: true);
+
+            var serviceWorkerInfo = new FileInfo(Path.Combine(outputPath, "firebase-messaging-sw.js"));
+            if (serviceWorkerInfo.Exists)
+                serviceWorkerInfo.Delete();
 
             if (settings.includeMessaging)
             {
-                using (var fs = fiServiceWorker.OpenWrite())
+                using (var fs = serviceWorkerInfo.OpenWrite())
                 {
                     //TODO: if you need support of onBackgroundMessage callback, feel free to create feature request if you need it
                     //https://github.com/firebase/quickstart-js/blob/master/messaging/firebase-messaging-sw.js
@@ -105,275 +290,25 @@ namespace FirebaseWebGL
             }
         }
 
-        private static string GenerateText(FirebaseSettings settings)
+        private static string GenerateText(FirebaseSettings settings, IReadOnlyList<ModularApiInjector> injectors)
         {
-            const string indent = "  ";
-            const string rootName = "firebaseSdk";
-            var auth = new ModularApiInjector(rootName, "auth", "authApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js", new[]
-            {
-                "getAuth",
-            }, (postfix) =>
-            {
-                return $"getAuth_{postfix}(app)";
-            });
-            var analytics = new ModularApiInjector(rootName, "analytics", "analyticsApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js", new[]
-            {
-                "getAnalytics", "isSupported", "getGoogleAnalyticsClientId", "logEvent", "setAnalyticsCollectionEnabled", "setConsent", "setDefaultEventParameters", "setUserId", "setUserProperties",
-            }, (postfix) =>
-            {
-                return $"getAnalytics_{postfix}(app)";
-            });
-            var appCheck = new ModularApiInjector(rootName, "appCheck", "appCheckApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-app-check.js", new[]
-            {
-                "initializeAppCheck", "getLimitedUseToken", "getToken", "onTokenChanged", "setTokenAutoRefreshEnabled", "CustomProvider", "ReCaptchaEnterpriseProvider", "ReCaptchaV3Provider"
-            }, (postfix) =>
-            {
-                var provider = settings.includeAppCheckSettings.providerType switch
-                {
-                    FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaV3 => $"new ReCaptchaV3Provider_{postfix}(\'" + settings.includeAppCheckSettings.reCaptchaV3PublicKey + "\')",
-                    FirebaseSettings.AppCheckSettings.ProviderType.ReCaptchaEnterprise => $"new ReCaptchaEnterpriseProvider_{postfix}(\'" + settings.includeAppCheckSettings.reCaptchaEnterprisePublicKey + "\')",
-                    _ => throw new Exception($"unsupported provider type {settings.includeAppCheckSettings.providerType}"),
-                };
-                var reCaptchaV3PublicKey = settings.includeAppCheckSettings.reCaptchaV3PublicKey;
-                var isTokenAutoRefreshEnabled = settings.includeAppCheckSettings.isTokenAutoRefreshEnabled;
-
-                var injectOptions = "return { provider: " + provider + ", isTokenAutoRefreshEnabled: " + (isTokenAutoRefreshEnabled ? 1 : 0) + " };";
-                return $"initializeAppCheck_{postfix}(app, function() {{ {injectOptions} }}())";
-            });
-            var firestore = new ModularApiInjector(rootName, "firestore", "firestoreApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js", new[]
-            {
-                "getFirestore",
-            }, (postfix) =>
-            {
-                return $"getFirestore_{postfix}(app)";
-            });
-            var messaging = new ModularApiInjector(rootName, "messaging", "messagingApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js", new[]
-            {
-                "getMessaging", "isSupported", "getToken", "deleteToken", "onMessage",
-            }, (postfix) =>
-            {
-                return $"getMessaging_{postfix}(app)";
-            });
-            var messagingSw = new ModularApiInjector(rootName, "messagingSw", "messagingSwApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging-sw.js", new[]
-            {
-                "getMessaging", "isSupported", "experimentalSetDeliveryMetricsExportedToBigQueryEnabled",
-            }, (postfix) =>
-            {
-                return $"getMessaging_{postfix}(app)";
-            });
-            var remoteConfig = new ModularApiInjector(rootName, "remoteConfig", "remoteConfigApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-remote-config.js", new[]
-            {
-                "getRemoteConfig", "isSupported", "activate", "ensureInitialized", "fetchAndActivate", "fetchConfig", "getAll", "getBoolean", "getNumber", "getString", "getValue", "onConfigUpdate", "setCustomSignals", "setLogLevel",
-            }, (postfix) =>
-            {
-                return $"getRemoteConfig_{postfix}(app)";
-            });
-            var installations = new ModularApiInjector(rootName, "installations", "installationsApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-installations.js", new[]
-            {
-                "getInstallations", "deleteInstallations", "getId", "getToken", "onIdChange",
-            }, (postfix) =>
-            {
-                return $"getInstallations_{postfix}(app)";
-            });
-            var performance = new ModularApiInjector(rootName, "performance", "performanceApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-performance.js", new[]
-            {
-                "getPerformance", "trace",
-            }, (postfix) =>
-            {
-                return $"getPerformance_{postfix}(app)";
-            });
-            var storage = new ModularApiInjector(rootName, "storage", "storageApi", "https://www.gstatic.com/firebasejs/12.9.0/firebase-storage.js", new[]
-            {
-                "getStorage", "connectStorageEmulator", "deleteObject", "getBlob", "getBytes", "getDownloadURL", "getMetadata", "getStream", "list", "ref", "updateMetadata", "uploadBytes", "uploadBytesResumable", "uploadString",
-            }, (postfix) =>
-            {
-                var bucketUrl = settings.includeStorageSettings.bucketUrl;
-                if (!string.IsNullOrWhiteSpace(bucketUrl))
-                {
-                    var uri = default(Uri);
-                    try
-                    {
-                        uri = new Uri(bucketUrl);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new Exception($"{nameof(bucketUrl)} cannot be parsed as uri", ex);
-                    }
-
-                    if (uri.Scheme != "gs")
-                        throw new Exception($"{nameof(bucketUrl)} should starts with 'gs://' scheme");
-
-                    return $"getStorage_{postfix}(app, \'" + uri.ToString() + "\')";
-                }
-                else
-                {
-                    return $"getStorage_{postfix}(app)";
-                }
-            });
-
             var sb = new StringBuilder();
             sb.AppendLine();
             sb.Append(indent).AppendLine("// Import the functions you need from the SDKs you need");
-            sb.Append(indent).AppendLine("import { initializeApp, setLogLevel } from \"https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js\";");
-            if (settings.includeAuth)
+            foreach (var injector in injectors)
             {
-                sb.Append(indent).InjectImport(auth);
+                sb.Append(indent).InjectImport(injector);
             }
-            if (settings.includeAnalytics)
-            {
-                sb.Append(indent).InjectImport(analytics);
-            }
-            if (settings.includeAppCheck)
-            {
-                sb.Append(indent).InjectImport(appCheck);
-            }
-            if (settings.includeFirestore)
-            {
-                sb.Append(indent).InjectImport(firestore);
-            }
-            if (settings.includeMessaging)
-            {
-                sb.Append(indent).InjectImport(messaging);
-                sb.Append(indent).InjectImport(messagingSw);
-            }
-            if (settings.includeRemoteConfig)
-            {
-                sb.Append(indent).InjectImport(remoteConfig);
-            }
-            if (settings.includeInstallations)
-            {
-                sb.Append(indent).InjectImport(installations);
-            }
-            if (settings.includePerformance)
-            {
-                sb.Append(indent).InjectImport(performance);
-            }
-            if (settings.includeStorage)
-            {
-                sb.Append(indent).InjectImport(storage);
-            }
-            sb.AppendLine();
-            sb.Append(indent).AppendLine("const firebaseConfig = {");
-            sb.Append(indent).Append(indent).AppendLine($"apiKey: \"{settings.apiKey}\",");
-            sb.Append(indent).Append(indent).AppendLine($"authDomain: \"{settings.authDomain}\",");
-            sb.Append(indent).Append(indent).AppendLine($"projectId: \"{settings.projectId}\",");
-            sb.Append(indent).Append(indent).AppendLine($"storageBucket: \"{settings.storageBucket}\",");
-            sb.Append(indent).Append(indent).AppendLine($"messagingSenderId: \"{settings.messagingSenderId}\",");
-            sb.Append(indent).Append(indent).AppendLine($"appId: \"{settings.appId}\",");
-            sb.Append(indent).Append(indent).AppendLine($"measurementId: \"{settings.measurementId}\",");
-            sb.Append(indent).AppendLine("};");
             sb.AppendLine();
             sb.Append(indent).AppendLine("// Initialize Firebase");
-            sb.Append(indent).AppendLine("const firebaseSdk = {}");
-            sb.Append(indent).AppendLine("const app = initializeApp(firebaseConfig);");
-            sb.Append(indent).AppendLine("firebaseSdk.app = app;");
-            sb.Append(indent).AppendLine("firebaseSdk.appApi = { setLogLevel };");
-            if (settings.includeAuth)
+            sb.Append(indent).AppendLine($"const {rootName} = {{ }}");
+            foreach (var injector in injectors)
             {
-                sb.Append(indent).InjectSdk(auth);
-                sb.Append(indent).InjectApi(auth);
+                sb.Append(indent).InjectSdk(injector);
+                sb.Append(indent).InjectApi(injector);
             }
-            if (settings.includeAnalytics)
-            {
-                sb.Append(indent).InjectSdk(analytics);
-                sb.Append(indent).InjectApi(analytics);
-            }
-            if (settings.includeAppCheck)
-            {
-                sb.Append(indent).InjectSdk(appCheck);
-                sb.Append(indent).InjectApi(appCheck);
-            }
-            if (settings.includeFirestore)
-            {
-                sb.Append(indent).InjectSdk(firestore);
-                sb.Append(indent).InjectApi(firestore);
-            }
-            if (settings.includeMessaging)
-            {
-                sb.Append(indent).InjectSdk(messaging);
-                sb.Append(indent).InjectApi(messaging);
-                sb.Append(indent).InjectSdk(messagingSw);
-                sb.Append(indent).InjectApi(messagingSw);
-            }
-            if (settings.includeRemoteConfig)
-            {
-                sb.Append(indent).InjectSdk(remoteConfig);
-                sb.Append(indent).InjectApi(remoteConfig);
-            }
-            if (settings.includeInstallations)
-            {
-                sb.Append(indent).InjectSdk(installations);
-                sb.Append(indent).InjectApi(installations);
-            }
-            if (settings.includePerformance)
-            {
-                sb.Append(indent).InjectSdk(performance);
-                sb.Append(indent).InjectApi(performance);
-            }
-            if (settings.includeStorage)
-            {
-                sb.Append(indent).InjectSdk(storage);
-                sb.Append(indent).InjectApi(storage);
-            }
-            sb.AppendLine(indent).AppendLine("document.firebaseSdk = firebaseSdk;");
+            sb.AppendLine(indent).AppendLine($"document.{rootName} = {rootName};");
             return sb.ToString();
-        }
-    }
-
-    internal class ModularApiInjector
-    {
-        private readonly string rootName;
-        private readonly string sdkName;
-        private readonly string apiName;
-        private readonly string sourcePath;
-        private readonly string[] injectedMethods;
-        private readonly OnSdkInjector sdkInjector;
-
-        public delegate string OnSdkInjector(string postfix);
-
-        public ModularApiInjector(string rootName, string sdkName, string apiName, string sourcePath, string[] injectedMethods, OnSdkInjector sdkInjector)
-        {
-            this.rootName = rootName;
-            this.sdkName = sdkName;
-            this.apiName = apiName;
-            this.sourcePath = sourcePath;
-            this.injectedMethods = injectedMethods;
-            this.sdkInjector = sdkInjector;
-        }
-
-        public StringBuilder InjectImport(StringBuilder sb)
-        {
-            var injectedMethods = string.Join(", ", this.injectedMethods.Select(x => $"{x} as {x}_{sdkName}"));
-            return sb.AppendLine($"import {{ {injectedMethods} }} from \"{sourcePath}\";");
-        }
-
-        public StringBuilder InjectSdk(StringBuilder sb)
-        {
-            return sb.AppendLine($"{rootName}.{sdkName} = {sdkInjector(sdkName)};");
-        }
-
-        public StringBuilder InjectApi(StringBuilder sb)
-        {
-            var injectedMethods = string.Join(", ", this.injectedMethods.Select(x => $"{x}: {x}_{sdkName}"));
-            return sb.AppendLine($"{rootName}.{apiName} = {{ {injectedMethods} }};");
-        }
-    }
-
-    internal static class ModularApiInjectorExtensions
-    {
-        internal static StringBuilder InjectImport(this StringBuilder sb, ModularApiInjector injector)
-        {
-            return injector.InjectImport(sb);
-        }
-
-        internal static StringBuilder InjectSdk(this StringBuilder sb, ModularApiInjector injector)
-        {
-            return injector.InjectSdk(sb);
-        }
-
-        internal static StringBuilder InjectApi(this StringBuilder sb, ModularApiInjector injector)
-        {
-            return injector.InjectApi(sb);
         }
     }
 }
