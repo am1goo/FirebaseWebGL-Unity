@@ -55,9 +55,7 @@ namespace FirebaseWebGL
         [DllImport("__Internal")]
         private static extern void FirebaseWebGL_FirebaseAuth_signOut(int requestId, FirebaseJsonCallbackDelegate callback);
         [DllImport("__Internal")]
-        private static extern void FirebaseWebGL_FirebaseAuth_updateCurrentUser(int userId, int requestId, FirebaseJsonCallbackDelegate callback);
-        [DllImport("__Internal")]
-        private static extern void FirebaseWebGL_FirebaseAuth_useDeviceLanguage();
+        private static extern bool FirebaseWebGL_FirebaseAuth_useDeviceLanguage();
         [DllImport("__Internal")]
         private static extern void FirebaseWebGL_FirebaseAuth_validatePassword(string password, int requestId, FirebaseJsonCallbackDelegate callback);
         [DllImport("__Internal")]
@@ -327,26 +325,12 @@ namespace FirebaseWebGL
             FirebaseWebGL_FirebaseAuth_signOut(requestId, OnBoolCallback);
         }
 
-        public void UpdateCurrentUser(int userId, Action<FirebaseCallback<bool>> firebaseCallback)
+        public bool UseDeviceLanguage()
         {
             if (!_isInitialized)
                 throw new FirebaseModuleNotInitializedException(this);
 
-            var requestId = _requests.NextId();
-            _onBoolCallbacks.Add(requestId, (callback) =>
-            {
-                firebaseCallback?.Invoke(callback);
-            });
-
-            FirebaseWebGL_FirebaseAuth_updateCurrentUser(userId, requestId, OnBoolCallback);
-        }
-
-        public void UseDeviceLanguage()
-        {
-            if (!_isInitialized)
-                throw new FirebaseModuleNotInitializedException(this);
-
-            FirebaseWebGL_FirebaseAuth_useDeviceLanguage();
+            return FirebaseWebGL_FirebaseAuth_useDeviceLanguage();
         }
 
         public void ValidatePassword(string password, Action<FirebaseCallback<FirebaseAuthPasswordValidationStatus>> firebaseCallback)

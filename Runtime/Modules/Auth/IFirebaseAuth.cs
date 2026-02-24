@@ -22,8 +22,7 @@ namespace FirebaseWebGL
         void SignInWithEmailAndPassword(string email, string password, Action<FirebaseCallback<FirebaseAuthUserCredential>> firebaseCallback);
         void SignInWithEmailLink(string email, string emailLink, Action<FirebaseCallback<FirebaseAuthUserCredential>> firebaseCallback);
         void SignOut(Action<FirebaseCallback<bool>> firebaseCallback);
-        void UpdateCurrentUser(int userId, Action<FirebaseCallback<bool>> firebaseCallback);
-        void UseDeviceLanguage();
+        bool UseDeviceLanguage();
         void ValidatePassword(string password, Action<FirebaseCallback<FirebaseAuthPasswordValidationStatus>> firebaseCallback);
         void VerifyPasswordResetCode(string code, Action<FirebaseCallback<string>> firebaseCallback);
         FirebaseAuthActionCodeURL ParseActionCodeURL(string link);
