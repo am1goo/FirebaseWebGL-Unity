@@ -273,11 +273,16 @@ namespace FirebaseWebGL
                 firebaseCallback?.Invoke(callback);
             });
 
-            var options = new Dictionary<string, string>
+            var options = new Dictionary<string, string>();
+            if (displayName != null)
             {
-                { "displayName", displayName },
-                { "photoURL", photoURL },
-            };
+                options[nameof(displayName)] = displayName;
+            }
+            if (photoURL != null)
+            {
+                options[nameof(photoURL)] = photoURL;
+            }
+
             var optionsAsJson = JsonConvert.SerializeObject(options);
             FirebaseWebGL_FirebaseAuth_User_updateProfile(_user.uid, optionsAsJson, requestId, OnBoolCallback);
         }
