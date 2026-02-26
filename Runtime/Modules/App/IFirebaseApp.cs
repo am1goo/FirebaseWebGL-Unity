@@ -11,5 +11,8 @@ namespace FirebaseWebGL
         IFirebaseInstallations Installations { get; }
         IFirebasePerformance Performance { get; }
         IFirebaseStorage Storage { get; }
+
+        string[] GetInstalledModules();
+        void SetLogLevel(FirebaseAppLogLevel logLevel);
     }
 }

@@ -15,11 +15,11 @@ namespace FirebaseWebGL.Editor
 
         internal delegate string OnSdkInjector(string postfix);
 
-        internal ModularApiInjector(string rootName, string sdkName, string apiName, string postfix, string sourcePath, string[] injectedExports, OnSdkInjector sdkInjector)
+        internal ModularApiInjector(string rootName, string sdkName, string postfix, string sourcePath, string[] injectedExports, OnSdkInjector sdkInjector)
         {
             this.rootName = rootName;
             this.sdkName = sdkName;
-            this.apiName = apiName;
+            this.apiName = $"{sdkName}Api";
             this.sourcePath = sourcePath;
             this.injectedExports = injectedExports;
             this.sdkInjector = sdkInjector;
@@ -28,7 +28,7 @@ namespace FirebaseWebGL.Editor
 
         public bool importSupported
         {
-            get => !string.IsNullOrWhiteSpace(sourcePath);
+            get => !string.IsNullOrWhiteSpace(sourcePath) && injectedExports != null;
         }
 
         public StringBuilder InjectImport(StringBuilder sb)
@@ -44,7 +44,7 @@ namespace FirebaseWebGL.Editor
             return sb.AppendLine($"{rootName}.{sdkName} = {sdkInjector(postfix)};");
         }
 
-        public bool apiSupported => !string.IsNullOrWhiteSpace(apiName);
+        public bool apiSupported => !string.IsNullOrWhiteSpace(apiName) && injectedExports != null;
 
         public StringBuilder InjectApi(StringBuilder sb)
         {

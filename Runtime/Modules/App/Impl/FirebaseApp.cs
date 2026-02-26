@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -8,6 +9,8 @@ namespace FirebaseWebGL
     {
         [DllImport("__Internal")]
         private static extern bool FirebaseWebGL_FirebaseApp_initalize();
+        [DllImport("__Internal")]
+        private static extern string FirebaseWebGL_FirebaseApp_installedModules();
         [DllImport("__Internal")]
         private static extern void FirebaseWebGL_FirebaseApp_deleteApp();
         [DllImport("__Internal")]
@@ -85,14 +88,10 @@ namespace FirebaseWebGL
 
         public static FirebaseApp DefaultInstance()
         {
-            var settings = FirebaseSettings.instance;
-            if (settings == null)
-                throw new Exception($"{nameof(FirebaseSettings)} file is not found in {nameof(Resources)} folder");
-
-            return new FirebaseApp(settings);
+            return new FirebaseApp();
         }
 
-        public FirebaseApp(FirebaseSettings settings)
+        public FirebaseApp()
         {
             if (Application.isEditor)
             {
@@ -110,43 +109,56 @@ namespace FirebaseWebGL
                 return;
             }
 
-            if (settings.includeAuth)
+            var installedModules = GetInstalledModules();
+            if (Contains(installedModules, FirebaseModuleNames.auth))
             {
                 _auth = new FirebaseAuth();
             }
-            if (settings.includeAnalytics)
+            if (Contains(installedModules, FirebaseModuleNames.analytics))
             {
                 _analytics = new FirebaseAnalytics();
             }
-            if (settings.includeAppCheck)
+            if (Contains(installedModules, FirebaseModuleNames.appCheck))
             {
                 _appCheck = new FirebaseAppCheck();
             }
-            if (settings.includeFunctions)
+            if (Contains(installedModules, FirebaseModuleNames.functions))
             {
                 _functions = new FirebaseFunctions();
             }
-            if (settings.includeMessaging)
+            if (Contains(installedModules, FirebaseModuleNames.messaging))
             {
-                var enableServiceWorker = settings.includeMessagingSettings.enableServiceWorker;
+                var enableServiceWorker = Contains(installedModules, FirebaseModuleNames.messagingSw);
                 _messaging = new FirebaseMessaging(enableServiceWorker);
             }
-            if (settings.includeRemoteConfig)
+            if (Contains(installedModules, FirebaseModuleNames.remoteConfig))
             {
                 _remoteConfig = new FirebaseRemoteConfig();
             }
-            if (settings.includeInstallations)
+            if (Contains(installedModules, FirebaseModuleNames.installations))
             {
                 _installations = new FirebaseInstallations();
             }
-            if (settings.includePerformance)
+            if (Contains(installedModules, FirebaseModuleNames.performance))
             {
                 _performance = new FirebasePerformance();
             }
-            if (settings.includeStorage)
+            if (Contains(installedModules, FirebaseModuleNames.storage))
             {
                 _storage = new FirebaseStorage();
             }
+        }
+
+        public string[] GetInstalledModules()
+        {
+            if (!_isInitialized)
+                throw new FirebaseModuleNotInitializedException(this);
+
+            var installedModulesAsJson = FirebaseWebGL_FirebaseApp_installedModules();
+            if (installedModulesAsJson == null)
+                return Array.Empty<string>();
+
+            return JsonConvert.DeserializeObject<string[]>(installedModulesAsJson);
         }
 
         public void SetLogLevel(FirebaseAppLogLevel logLevel)
@@ -155,6 +167,11 @@ namespace FirebaseWebGL
                 throw new FirebaseModuleNotInitializedException(this);
 
             FirebaseWebGL_FirebaseApp_setLogLevel((int)logLevel);
+        }
+
+        private static bool Contains<T>(T[] array, T value)
+        {
+            return Array.IndexOf(array, value) >= 0;
         }
     }
 }

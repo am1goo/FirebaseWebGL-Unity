@@ -101,6 +101,44 @@ const firebaseAppLibrary = {
 			}
 		},
 		
+		installedModules: function() {
+			const installedModules = [];
+			if (typeof document.firebaseSdk.auth !== 'undefined') {
+				installedModules.push('auth');
+			}
+			if (typeof document.firebaseSdk.analytics !== 'undefined') {
+				installedModules.push('analytics');
+			}
+			if (typeof document.firebaseSdk.appCheck !== 'undefined') {
+				installedModules.push('appCheck');
+			}
+			if (typeof document.firebaseSdk.firestore !== 'undefined') {
+				installedModules.push('firestore');
+			}
+			if (typeof document.firebaseSdk.functions !== 'undefined') {
+				installedModules.push('functions');
+			}
+			if (typeof document.firebaseSdk.messaging !== 'undefined') {
+				installedModules.push('messaging');
+			}
+			if (typeof document.firebaseSdk.messagingSw !== 'undefined') {
+				installedModules.push('messagingSw');
+			}
+			if (typeof document.firebaseSdk.remoteConfig !== 'undefined') {
+				installedModules.push('remoteConfig');
+			}
+			if (typeof document.firebaseSdk.installations !== 'undefined') {
+				installedModules.push('installations');
+			}
+			if (typeof document.firebaseSdk.performance !== 'undefined') {
+				installedModules.push('performance');
+			}
+			if (typeof document.firebaseSdk.storage !== 'undefined') {
+				installedModules.push('storage');
+			}
+			return installedModules;
+		},
+		
 		deleteApp: function() {
 			const plugin = this;
 			plugin.sdk.deleteApp(plugin.sdk);
@@ -140,6 +178,12 @@ const firebaseAppLibrary = {
 	
 	FirebaseWebGL_FirebaseApp_initalize: function () {
 		return firebaseApp.initialize();
+	},
+	
+	FirebaseWebGL_FirebaseApp_installedModules: function() {
+		const installedModules = firebaseApp.installedModules();
+		const installedModulesAsJson = JSON.stringify(installedModules);
+		return stringToNewUTF8(installedModulesAsJson);
 	},
 	
 	FirebaseWebGL_FirebaseApp_deleteApp: function () {
