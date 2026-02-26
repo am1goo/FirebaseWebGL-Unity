@@ -80,6 +80,21 @@ IEnumerator Start()
 ...
 ```
 
+## Troubleshooting
+#### CORS policies
+You will probably experience difficulties loading additional scripts from Google servers. To resolve, ask your IT or web-platform support to add following domains to CORS policies:
+```
+fcmregistrations.googleapis.com
+firebase.googleapis.com
+firebaseappcheck.googleapis.com
+firebaseinstallations.googleapis.com
+firebaselogging.googleapis.com
+firebaseremoteconfig.googleapis.com
+firebasestorage.googleapis.com
+firestore.googleapis.com
+identitytoolkit.googleapis.com
+```
+
 ## Tested in
 - Unity 2020.3.x
 
