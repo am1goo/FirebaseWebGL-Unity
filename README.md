@@ -28,14 +28,14 @@ If I wrong, feel free to ping me and I will add these modules in the package as 
 
 
 ## What's inside?
-- Just few `*.cs` and `*.jslib` files [Source Code]
-- `HtmlAgilityPack` library as a dependency [Editor]
+- [Runtime] Just few `*.cs` and `*.jslib` files
+- [Editor] `HtmlAgilityPack.dll` as a dependency 
 
 ## Installation
 ##### via Unity Package Manager
 The latest version can be installed via [package manager](https://docs.unity3d.com/Manual/upm-ui-giturl.html) using following git URL:
 ```
-https://github.com/am1goo/FirebaseWebGL-Unity.git#0.9.2
+https://github.com/am1goo/FirebaseWebGL-Unity.git#0.9.3
 ```
 
 ## Extensions
@@ -94,6 +94,11 @@ firebasestorage.googleapis.com
 firestore.googleapis.com
 identitytoolkit.googleapis.com
 ```
+
+#### Different configurations
+By default, to use Firebase functionality, the settings file should be located at specified path `Resources/FirebaseSettings.asset`.
+If you want to override this behaviour, you may define `FIREBASE_WEBGL_SETTINGS_PATH` environment argument during the build process.
+It can be useful in case where you want to have different configurations for various web platforms (Crazy Games, Poki, Playhop and others).
 
 ## Tested in
 - Unity 2020.3.x
