@@ -64,18 +64,99 @@ namespace FirebaseWebGL.Editor
             }
 
             var html = doc.DocumentNode.SelectSingleNode("html");
+
+            var head = html.SelectSingleNode("head");
+            InjectHead(head, settings);
+
             var body = html.SelectSingleNode("body");
-            var scripts = body.SelectNodes("script");
+            InjectBody(body, settings);
 
-            foreach (var script in scripts)
+            using (var fs = fi.OpenWrite())
             {
-                var remark = script.GetAttributeValue("remark", null);
-                if (remark == null || remark != remarkValue)
-                    continue;
-
-                body.RemoveChild(script);
-                break;
+                fs.SetLength(0);
+                fs.Seek(0, SeekOrigin.Begin);
+                doc.Save(fs, utf8);
             }
+
+            var serviceWorkerInfo = new FileInfo(Path.Combine(outputPath, "firebase-messaging-sw.js"));
+            if (serviceWorkerInfo.Exists)
+                serviceWorkerInfo.Delete();
+
+            if (settings.includeMessaging)
+            {
+                using (var fs = serviceWorkerInfo.OpenWrite())
+                {
+                    //TODO: if you need support of onBackgroundMessage callback, feel free to create feature request if you need it
+                    //https://github.com/firebase/quickstart-js/blob/master/messaging/firebase-messaging-sw.js
+                    fs.Flush();
+                }
+            }
+        }
+
+        private static void InjectHead(HtmlNode node, FirebaseSettings settings)
+        {
+            FindAndRemoveChildrenWithRemark(node, "meta", remarkValue);
+
+            if (!settings.useContentSecurityPolicies)
+                return;
+
+            var scriptsSrc = new HashSet<string>();
+            var imgSrc = new HashSet<string>();
+            var connectSrc = new HashSet<string>();
+
+            scriptsSrc.Add("https://*.gstatic.com");
+            scriptsSrc.Add("https://*.googleapis.com");
+            connectSrc.Add("https://*.gstatic.com");
+            connectSrc.Add("https://*.googleapis.com");
+            if (settings.includeAnalytics)
+            {
+                scriptsSrc.Add("https://*.googletagmanager.com");
+                imgSrc.Add("https://*.google-analytics.com");
+                imgSrc.Add("https://*.googletagmanager.com");
+                connectSrc.Add("https://*.google-analytics.com");
+                connectSrc.Add("https://*.analytics.google.com");
+                connectSrc.Add("https://*.googletagmanager.com");
+            }
+            if (settings.includeAppCheck)
+            {
+                scriptsSrc.Add("https://*.google.com");
+                connectSrc.Add("https://*.google.com");
+            }
+
+            if (scriptsSrc.Count > 0 || imgSrc.Count > 0 || connectSrc.Count > 0)
+            {
+                var sb = new StringBuilder();
+                if (scriptsSrc.Count > 0)
+                {
+                    if (sb.Length > 0)
+                        sb.Append("; ");
+                    sb.Append($"script-src 'self' {string.Join(' ', scriptsSrc)} 'unsafe-inline' 'wasm-unsafe-eval'");
+                }
+                if (imgSrc.Count > 0)
+                {
+                    if (sb.Length > 0)
+                        sb.Append("; ");
+                    sb.Append($"img-src 'self' {string.Join(' ', imgSrc)} 'unsafe-inline'");
+                }
+                if (connectSrc.Count > 0)
+                {
+                    if (sb.Length > 0)
+                        sb.Append("; ");
+                    sb.Append($"connect-src 'self' {string.Join(' ', connectSrc)} 'unsafe-inline'");
+                }
+
+                var contentText = sb.ToString();
+                var nodeToInject = node.OwnerDocument.CreateElement("meta");
+                nodeToInject.Attributes.Append("http-equiv", "Content-Security-Policy");
+                nodeToInject.Attributes.Append("content", contentText);
+                nodeToInject.Attributes.Append("remark", remarkValue);
+                node.PrependChild(nodeToInject);
+            }
+        }
+
+        private static void InjectBody(HtmlNode node, FirebaseSettings settings)
+        {
+            FindAndRemoveChildrenWithRemark(node, "script", remarkValue);
 
             if (string.IsNullOrEmpty(settings.apiKey))
                 throw new Exception($"{nameof(settings.apiKey)} is not defined");
@@ -344,37 +425,11 @@ namespace FirebaseWebGL.Editor
             }
 
             var textToInject = HtmlNode.CreateNode(GenerateText(settings, injectors));
-            var nodeToInject = new HtmlNode(HtmlNodeType.Element, doc, 0);
-            nodeToInject.Name = "script";
+            var nodeToInject = node.OwnerDocument.CreateElement("script");
             nodeToInject.Attributes.Append("type", "module");
             nodeToInject.Attributes.Append("remark", remarkValue);
             nodeToInject.AppendChild(textToInject);
-            body.AppendChild(nodeToInject);
-
-            using (var fs = fi.OpenWrite())
-            {
-                fs.SetLength(0);
-                fs.Seek(0, SeekOrigin.Begin);
-                doc.Save(fs, utf8);
-            }
-
-            var bundleFolderInfo = new DirectoryInfo(Path.Combine(outputPath, bundledFolder));
-            if (bundleFolderInfo.Exists)
-                bundleFolderInfo.Delete(recursive: true);
-
-            var serviceWorkerInfo = new FileInfo(Path.Combine(outputPath, "firebase-messaging-sw.js"));
-            if (serviceWorkerInfo.Exists)
-                serviceWorkerInfo.Delete();
-
-            if (settings.includeMessaging)
-            {
-                using (var fs = serviceWorkerInfo.OpenWrite())
-                {
-                    //TODO: if you need support of onBackgroundMessage callback, feel free to create feature request if you need it
-                    //https://github.com/firebase/quickstart-js/blob/master/messaging/firebase-messaging-sw.js
-                    fs.Flush();
-                }
-            }
+            node.AppendChild(nodeToInject);
         }
 
         private static string GenerateText(FirebaseSettings settings, IReadOnlyList<ModularApiInjector> injectors)
@@ -400,6 +455,23 @@ namespace FirebaseWebGL.Editor
             }
             sb.AppendLine(indent).AppendLine($"document.{rootName} = {rootName};");
             return sb.ToString();
+        }
+
+        private static void FindAndRemoveChildrenWithRemark(HtmlNode node, string childName, string remarkValue)
+        {
+            var scripts = node.SelectNodes(childName);
+            if (scripts == null)
+                return;
+
+            foreach (var script in scripts)
+            {
+                var remark = script.GetAttributeValue("remark", null);
+                if (remark == null || remark != remarkValue)
+                    continue;
+
+                node.RemoveChild(script);
+                break;
+            }
         }
     }
 }

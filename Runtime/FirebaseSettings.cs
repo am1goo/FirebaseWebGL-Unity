@@ -30,6 +30,10 @@ namespace FirebaseWebGL
         private string _measurementId;
         public string measurementId => _measurementId;
         [Header("Options")]
+        [SerializeField]
+        private bool _useContentSecurityPolicies;
+        public bool useContentSecurityPolicies => _useContentSecurityPolicies;
+        [Header("Modules")]
         //hidden fields
         [SerializeField, HideInInspector]
         private bool _includeAuth;
