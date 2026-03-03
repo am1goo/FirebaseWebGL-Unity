@@ -438,6 +438,15 @@ namespace FirebaseWebGL.Editor
             var sb = new StringBuilder();
             sb.AppendLine();
             sb.Append(indent).AppendLine("// Import the functions you need from the SDKs you need");
+            /* TODO: remove this *gtag* modification later (official bug fix is in progress) */
+            sb.Append(indent).AppendLine("window.dataLayer = window.dataLayer || [];")
+              .Append(indent).AppendLine("window.gtag = function() { window.dataLayer.push(arguments); }")
+              .Append(indent).AppendLine($"window.gtag(\"config\", \"{settings.measurementId}\", {{")
+              .Append(indent).Append(indent).AppendLine("cookie_domain: window.location.hostname,")
+              .Append(indent).Append(indent).AppendLine("cookie_flags: \"SameSite=None;Secure\",")
+              .Append(indent).AppendLine($"}});")
+              .AppendLine();
+
             foreach (var injector in injectors)
             {
                 if (injector.importSupported)
