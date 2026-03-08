@@ -6,6 +6,7 @@ Google does not provide support for the Unity WebGL plugin, so I've decided to d
 - **An easy-to-setup** via one Firebase settings file, **no additional actions required**!
 - **An easy-to-use API** similar to the official Firebase plugin for Unity (iOS/Android) with small differences.
 - **Ready to work** through third-party web platforms.
+- Based on Firebase JS SDK **12.9.0** version
 
 ## Which Firebase modules were included?
 - [x] App
