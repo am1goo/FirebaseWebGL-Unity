@@ -25,6 +25,9 @@ namespace FirebaseWebGL.Editor
 
         public void OnPostprocessBuild(BuildReport report)
         {
+            if (report.summary.platformGroup != BuildTargetGroup.WebGL)
+                return;
+
             InjectFirebaseScripts(report.summary.outputPath);
         }
 
