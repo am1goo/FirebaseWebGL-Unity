@@ -14,7 +14,7 @@ namespace FirebaseWebGL.Samples
             _app = FirebaseApp.DefaultInstance();
             if (!_app.isInitialized)
             {
-                Debug.LogError($"Start: Firebase SDK is not initialized is not initialized. Be sure that you setup {nameof(FirebaseSettings)}.asset file in {nameof(Resources)} folder.");
+                Debug.LogError($"Start: Firebase SDK is not initialized. Be sure that you setup {nameof(FirebaseSettings)}.asset file in {nameof(Resources)} folder.");
                 Destroy(gameObject);
                 return;
             }
