@@ -134,10 +134,16 @@ const firebaseAnalyticsLibrary = {
 		firebaseAnalytics.setConsent(consent);
 	},
 	
-	FirebaseWebGL_FirebaseAnalytics_logEvent: function (eventNamePtr, eventParamsPtr) {
+	FirebaseWebGL_FirebaseAnalytics_logEvent: function (eventNamePtr, eventParamsAsJsonPtr) {
 		const eventName = UTF8ToString(eventNamePtr);
-		const eventParams = eventParamsPtr != 0 ? UTF8ToString(eventParamsPtr) : null;
-		firebaseAnalytics.logEvent(eventName, eventParams);
+		if (eventParamsAsJsonPtr != 0) {
+			const eventParamsAsJson = UTF8ToString(eventParamsAsJsonPtr);
+			const eventParams = JSON.parse(eventParamsAsJson);
+			firebaseAnalytics.logEvent(eventName, eventParams);
+		}
+		else {
+			firebaseAnalytics.logEvent(eventName, null);
+		}
 	},
 };
 
