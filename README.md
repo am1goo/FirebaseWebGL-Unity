@@ -1,5 +1,5 @@
 # Firebase for Unity WebGL
-Naive implementation of the most popular Firebase modules for Web apps and games made by Unity Engine. \
+Implementation of the most popular Firebase modules for Web apps and games made by Unity Engine. \
 Google does not provide support for the Unity WebGL plugin, so I've decided to do it by myself.
 <p align="left">
   <img src="Readme/logo.jpg" alt="logo" width=384/>
